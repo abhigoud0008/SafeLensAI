@@ -16,6 +16,11 @@ import {
   X,
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import heroSafelensImg from '../assets/images/hero_safelens_calm_1794583382376.jpg';
+import aboutWorkshopImg from '../assets/images/about_safety_workshop_1794583381059.jpg';
+import priyaAvatarImg from '../assets/images/testimonial_priya_1794583382741.jpg';
+import marcusAvatarImg from '../assets/images/testimonial_marcus_1794583382344.jpg';
+import elenaAvatarImg from '../assets/images/testimonial_elena_1794583382878.jpg';
 import type { AppSection } from '../types/safety';
 import { Button, Card } from './ui/Primitives';
 
@@ -29,21 +34,21 @@ const TESTIMONIALS = [
   {
     name: 'Priya Nair',
     role: 'Product Manager · Austin, TX',
-    avatar: '/src/assets/images/testimonial_priya_1794583382741.jpg',
+    avatar: priyaAvatarImg,
     quote:
       'I received a WhatsApp message offering a remote contract with an upfront equipment deposit. SafeLens AI broke down the urgency and fee-first warning signs in ten seconds, so I verified with the company’s real HR directory and avoided a $180 loss.',
   },
   {
     name: 'Marcus Vance',
     role: 'High School Educator · Chicago, IL',
-    avatar: '/src/assets/images/testimonial_marcus_1794583382344.jpg',
+    avatar: marcusAvatarImg,
     quote:
       'Using "Explain Like I’m 10" mode during digital literacy class turned scary phishing warnings into clear, memorable lessons. My students now check root domains before tapping any QR code or shortened link.',
   },
   {
     name: 'Elena Rostova',
     role: 'Community Volunteer · Seattle, WA',
-    avatar: '/src/assets/images/testimonial_elena_1794583382878.jpg',
+    avatar: elenaAvatarImg,
     quote:
       'Most security tools feel overwhelming or alarmist. SafeLens AI calmly translates app permissions and daily safety checklists into plain English our neighborhood senior group actually enjoys reading.',
   },
@@ -251,7 +256,7 @@ export function LandingPage({
             >
               <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-200 dark:bg-slate-900 min-h-[300px]">
                 <img
-                  src="/src/assets/images/hero_safelens_calm_1794583382376.jpg"
+                  src={heroSafelensImg}
                   alt="Person calmly reviewing a smartphone message beside a laptop in natural morning light"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover lg:h-full"
@@ -476,7 +481,7 @@ export function LandingPage({
             <div className="lg:col-span-5 flex">
               <div className="w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-200 dark:bg-slate-900 min-h-[280px]">
                 <img
-                  src="/src/assets/images/about_safety_workshop_1794583381059.jpg"
+                  src={aboutWorkshopImg}
                   alt="Family members reviewing digital safety guidance together on a tablet"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover lg:h-full"

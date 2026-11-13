@@ -1,0 +1,6 @@
+{
+  "name": "SafeLens AI",
+  "description": "Understand Risk Before You Trust. An AI-powered personal safety companion that helps people identify, understand, and prevent everyday digital and real-world safety risks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

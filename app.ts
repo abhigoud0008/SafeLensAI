@@ -6,13 +6,13 @@ import {
   buildSafetyAdvisorPrompt,
   buildScamAnalysisPrompt,
   buildUrlAnalysisPrompt,
-} from './src/lib/prompts';
+} from './src/lib/prompts.js';
 import {
   analyzeMessageHeuristics,
   analyzeQrContentHeuristics,
   analyzeUrlHeuristics,
   buildSamplePermissionAnalysis,
-} from './src/lib/safetyEngine';
+} from './src/lib/safetyEngine.js';
 import type {
   AdvisorCategoryId,
   MessageChannel,

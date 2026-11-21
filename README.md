@@ -26,15 +26,15 @@ SafeLens AI intentionally runs **without** any external database, user accounts,
 
 - Analysis history, Safety Academy progress, quiz scores, and theme preferences are stored exclusively in browser `localStorage`.
 - QR code decoding happens locally on an HTML5 `<canvas>` via `jsQR`.
-- Server-side Express endpoints proxy `@google/genai` (`gemini-4-hydrogen`) calls so API keys never reach the browser, and fall back gracefully to deterministic local heuristics when `GEMINI_API_KEY` is not set.
+- On local/Render hosting, the Express server provides API routes; on Vercel, the same routes run as on-demand functions in `api/`, backed by `app.ts`. The Gemini API key stays server-side. The current Gemini model name in `app.ts` is `gemini-4-hydrogen`; check that your key can access this model. When AI is not configured or an AI call fails, some routes return heuristic or sample guidance instead of AI output.
 
 ---
 
 ## Tech Stack
 
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons, Motion (`motion/react`)
-- **Backend:** Node.js, Express (`server.ts`)
-- **AI:** Google Gemini API (`@google/genai` — `gemini-4-hydrogen`)
+- **Backend:** Express API (`app.ts`), traditional Node.js entrypoint (`server.ts`), and Vercel HTTP functions (`api/`)
+- **AI:** Google Gemini API (`@google/genai`); model currently configured in `app.ts` as `gemini-4-hydrogen`
 - **Utilities:** `jsqr` (local QR decoding), `jspdf` (PDF report export), `clsx`, `tailwind-merge`
 - **Testing:** `node:test` + `tsx`
 
@@ -43,10 +43,15 @@ SafeLens AI intentionally runs **without** any external database, user accounts,
 ## Project Structure
 
 ```text
-├── server.ts                         # Express server + Vite middleware + Gemini API routes
+├── app.ts                            # Express app with API handlers and Gemini integration
+├── server.ts                         # Traditional local/Render server with Vite middleware
+├── api/                              # Vercel function entrypoints (6 endpoints)
+│   ├── health.ts
+│   ├── analyze/                      # message, url, qr, permissions
+│   └── advisor/                      # ask
+├── vercel.json                       # Vite build and SPA fallback
 ├── index.html                        # HTML entry point & typography setup
 ├── package.json
-├── .env.example                      # Environment variable template
 └── src/
     ├── App.tsx                       # Root application & section routing
     ├── index.css                     # Tailwind CSS v4 & dark mode variant
@@ -91,25 +96,22 @@ SafeLens AI intentionally runs **without** any external database, user accounts,
 ### 1. Clone the repository & install dependencies
 
 ```bash
-git clone https://github.com/<your-username>/safelens-ai.git
-cd safelens-ai
+git clone https://github.com/abhigoud0008/SafeLensAI.git
+cd SafeLensAI
 npm install
 ```
 
 ### 2. Configure environment variables
 
-Copy `.env.example` to `.env` and add your Gemini API key:
-
-```bash
-cp .env.example .env
-```
+Create a local `.env` file in the repository root (never commit the real key):
 
 ```env
-GEMINI_API_KEY="your_gemini_api_key_here"
-APP_URL="http://localhost:3000"
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-> **Note:** If `GEMINI_API_KEY` is omitted, SafeLens AI automatically falls back to its built-in deterministic heuristic engine so all modules remain functional for local demos.
+The app can run in heuristic/demo mode without a Gemini API key. Note that the configured model must be available to your key for live Gemini-generated answers.
+
+> **Note:** Without a valid `GEMINI_API_KEY`, message, URL, and QR analysis use heuristics. Some features such as permission interpretation may display sample/fallback data rather than a real AI interpretation.
 
 ### 3. Run in development
 
@@ -149,6 +151,31 @@ npx tsx --test src/lib/safetyEngine.test.ts
 | `/api/analyze/qr` | `POST` | Evaluates decoded QR payload (URL, UPI, Wi-Fi, text) |
 | `/api/analyze/permissions` | `POST` | Translates uploaded permission screenshots and notes |
 | `/api/advisor/ask` | `POST` | Answers follow-up questions in the Safety Advisor |
+
+---
+
+## Deploy to Vercel (Vite + Serverless APIs)
+
+Vercel deploys the React/Vite frontend as static files and the six API entrypoints in `api/` as on-demand functions. **Do not configure `npm start` as the Vercel start command.** That script is for the traditional local/Render server, not Vercel Functions.
+
+1. Visit [Vercel New Project](https://vercel.com/new), sign in with GitHub, and import [abhigoud0008/SafeLensAI](https://github.com/abhigoud0008/SafeLensAI).
+2. Use the **Vite** framework preset, project root `./`, build command `npm run build`, output directory `dist`, and a supported Node.js version (22.x is suitable for this project).
+3. In **Project Settings → Environment Variables**, add `GEMINI_API_KEY` as a server-side variable for Production. Do not expose it as a `VITE_` variable or commit it to Git.
+4. Deploy the latest `main` branch. Future GitHub commits can trigger new deployments if automatic deployment is enabled.
+5. Verify `https://YOUR-PROJECT.vercel.app/api/health` returns JSON with `ok: true`. The `aiConfigured` field only indicates that an API key is present; it does not prove the model call will succeed.
+6. Open the website, then test **Message Analyzer**, **URL Checker**, **QR Scanner**, **Permission Translator**, and **Safety Advisor** using actual requests.
+
+The relevant Vercel files are `vercel.json`, `api/health.ts`, `api/analyze/*.ts`, `api/advisor/ask.ts`, and `app.ts`. The Node.js Functions are **not permanently running web servers**; usage, duration, and request-size limits apply. Vercel Hobby is intended for personal, non-commercial use within its limits. The Gemini Developer API has separate availability, quotas, and potential charges.
+
+### Troubleshooting
+
+- **Frontend works, API fails with 500:** Check **Vercel → Project → Logs** for a function exception. A build marked `Ready` does not verify runtime API behavior.
+- **`ERR_MODULE_NOT_FOUND` referencing `/var/task/app` or `/var/task/server`:** Check that the latest committed Vercel API entrypoints use explicit `.js` imports. Avoid importing the local Vite server entrypoint inside functions.
+- **`Unexpected token ... is not valid JSON`:** An API request likely received an HTML/plain-text error response. Check the HTTP status, response body, and corresponding function logs.
+- **`aiConfigured: false`:** Add `GEMINI_API_KEY` in Vercel and redeploy. If true but Gemini calls fail, inspect the logs for an invalid model, API key permissions, or quota exhaustion.
+- **Deep SPA route reload gives 404:** Check the fallback rewrite in `vercel.json`.
+
+Official deployment reference: [Vercel's Vite guide](https://vercel.com/docs/frameworks/frontend/vite).
 
 ---
 

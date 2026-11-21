@@ -3,7 +3,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
-import { createServer as createViteServer } from 'vite';
 import {
   buildPermissionTranslationPrompt,
   buildSafetyAdvisorPrompt,
@@ -438,23 +437,43 @@ async function startServer() {
     }
   });
 
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+  // Local development and Render serve the Vite app from Express.
+  // Vercel serves the built frontend separately and runs API functions on demand.
+  if (!process.env.VERCEL) {
+    if (process.env.NODE_ENV !== 'production') {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    } else {
+      const distPath = path.resolve(__dirname, 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (_req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    }
   }
+  return app;
+}
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`SafeLens AI server listening on http://localhost:${PORT}`);
+const appPromise = startServer();
+
+// Preserve the existing local/Render startup behavior.
+if (!process.env.VERCEL) {
+  appPromise.then((app) => {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`SafeLens AI server listening on http://localhost:${PORT}`);
+    });
+  }).catch((err) => {
+    console.error('Failed to start SafeLens AI:', err);
+    process.exitCode = 1;
   });
 }
 
-startServer();
+// Reused by the Vercel /api entrypoints.
+export default async function handler(req: express.Request, res: express.Response) {
+  const app = await appPromise;
+  app(req, res);
+}
